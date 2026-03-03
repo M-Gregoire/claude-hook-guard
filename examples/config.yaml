@@ -1,60 +1,60 @@
+# Example configuration for claude-hook-guard
+# Copy to ~/.config/claude-hook-guard/config.yaml and customize
+
+logging:
+  enabled: true
+  file: $HOME/.claude/claude-hook-guard.log
+
 rules:
+  # Allow all operations in ~/org/projects
+  - name: allow-org-projects
+    description: Allow read and write in org projects directory
+    priority: 150
+    match:
+      action_type:
+        one_of: ["read", "write"]
+      path:
+        regex: "^(/Users/.+/org/projects/|~/org/projects/)"
+    action: allow
+    reason: Documentation directory
+
   # Allow read operations in ~/src
   - name: allow-read-src
-    description: Allow Read, Grep, Glob in source directories
+    description: Allow read operations in source directories
     priority: 100
     match:
-      tool_name:
-        one_of: ["Read", "Grep", "Glob"]
-      parameters:
-        path:
-          regex: "^(/Users/.+/src/|~/src/)"
+      action_type:
+        equals: "read"
+      path:
+        regex: "^(/Users/.+/src/|~/src/)"
     action: allow
     reason: Safe read operation in source directory
-
-  # Allow safe git commands
-  - name: allow-safe-git
-    description: Allow read-only git commands
-    priority: 100
-    match:
-      tool_name:
-        equals: "Bash"
-      parameters:
-        command:
-          regex: "git.*(status|log|diff|show|branch|remote|fetch)"
-    action: allow
-    reason: Safe git command
-
-  # Deny git push to main/master
-  - name: deny-git-push-main
-    description: Prevent pushing directly to main/master
-    priority: 200
-    match:
-      tool_name:
-        equals: "Bash"
-      parameters:
-        command:
-          regex: "git push.*(origin )?(main|master)"
-    action: deny
-    reason: Direct push to main/master is not allowed
 
   # Deny destructive operations
   - name: deny-destructive
     description: Prevent rm -rf and similar dangerous commands
     priority: 200
     match:
-      tool_name:
-        equals: "Bash"
+      action_type:
+        equals: "write"
       parameters:
         command:
           regex: "rm\\s+(-[^\\s]*r[^\\s]*f|--recursive.*--force)"
     action: deny
     reason: Destructive command blocked for safety
 
-  # Default: ask for everything else
-  - name: default-ask
-    description: Default rule - ask user for permission
-    priority: 0
-    match: {}
-    action: ask
-    reason: No specific rule matched, requesting user approval
+  # Deny git push to main/master
+  - name: deny-git-push-main
+    description: Prevent pushing directly to main/master
+    priority: 200
+    match:
+      tool_family:
+        equals: "git"
+      parameters:
+        command:
+          regex: "git push.*(origin )?(main|master)"
+    action: deny
+    reason: Direct push to main/master is not allowed
+
+# Note: When no rules match, the hook passes through to Claude Code,
+# allowing the normal permission prompt with "Approve for this session"
