@@ -53,56 +53,67 @@ func (m *Matcher) Evaluate(input *hook.Input) (hook.Decision, string, string, er
 
 // matchRule checks if a rule matches the input
 func (m *Matcher) matchRule(rule config.Rule, input *hook.Input) (bool, error) {
-	// Check tool name
-	if rule.Match.ToolName != nil {
-		if !matchString(rule.Match.ToolName, input.ToolName) {
-			return false, nil
-		}
+	return m.matchesToolName(rule, input) &&
+		m.matchesActionTypeAndFamily(rule, input) &&
+		m.matchesPath(rule, input) &&
+		m.matchesCWD(rule, input) &&
+		m.matchesParameters(rule, input), nil
+}
+
+// matchesToolName checks if the tool name matches
+func (m *Matcher) matchesToolName(rule config.Rule, input *hook.Input) bool {
+	if rule.Match.ToolName == nil {
+		return true
+	}
+	return matchString(rule.Match.ToolName, input.ToolName)
+}
+
+// matchesActionTypeAndFamily checks if action type and tool family match
+func (m *Matcher) matchesActionTypeAndFamily(rule config.Rule, input *hook.Input) bool {
+	if rule.Match.ActionType == nil && rule.Match.ToolFamily == nil {
+		return true
 	}
 
-	// Check action type
+	actionType, toolFamily := m.classifyTool(input)
+
 	if rule.Match.ActionType != nil {
-		actionType, toolFamily := m.classifyTool(input)
 		if !matchString(rule.Match.ActionType, string(actionType)) {
-			return false, nil
+			return false
 		}
 		// If action_type matched, also check tool_family if specified
 		if rule.Match.ToolFamily != nil {
-			if !matchString(rule.Match.ToolFamily, string(toolFamily)) {
-				return false, nil
-			}
+			return matchString(rule.Match.ToolFamily, string(toolFamily))
 		}
-	} else if rule.Match.ToolFamily != nil {
-		// Check tool family even if action_type not specified
-		_, toolFamily := m.classifyTool(input)
-		if !matchString(rule.Match.ToolFamily, string(toolFamily)) {
-			return false, nil
-		}
+		return true
 	}
 
-	// Check path (looks in file_path, path parameters, or CWD)
-	if rule.Match.Path != nil {
-		pathToCheck := m.extractPath(input)
-		if pathToCheck == "" || !matchString(rule.Match.Path, pathToCheck) {
-			return false, nil
-		}
-	}
+	// Check tool family even if action_type not specified
+	return matchString(rule.Match.ToolFamily, string(toolFamily))
+}
 
-	// Check CWD
-	if rule.Match.CWD != nil {
-		if !matchString(rule.Match.CWD, input.CWD) {
-			return false, nil
-		}
+// matchesPath checks if the path matches
+func (m *Matcher) matchesPath(rule config.Rule, input *hook.Input) bool {
+	if rule.Match.Path == nil {
+		return true
 	}
+	pathToCheck := m.extractPath(input)
+	return pathToCheck != "" && matchString(rule.Match.Path, pathToCheck)
+}
 
-	// Check parameters
-	if rule.Match.Parameters != nil {
-		if !matchParameters(rule.Match.Parameters, input.ToolInput) {
-			return false, nil
-		}
+// matchesCWD checks if the current working directory matches
+func (m *Matcher) matchesCWD(rule config.Rule, input *hook.Input) bool {
+	if rule.Match.CWD == nil {
+		return true
 	}
+	return matchString(rule.Match.CWD, input.CWD)
+}
 
-	return true, nil
+// matchesParameters checks if the parameters match
+func (m *Matcher) matchesParameters(rule config.Rule, input *hook.Input) bool {
+	if rule.Match.Parameters == nil {
+		return true
+	}
+	return matchParameters(rule.Match.Parameters, input.ToolInput)
 }
 
 // classifyTool determines the action type and tool family for an input

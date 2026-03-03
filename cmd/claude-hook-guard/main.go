@@ -25,17 +25,46 @@ func main() {
 }
 
 func run(configPath string, verbose bool) error {
-	// Load configuration
-	cfg, err := config.LoadConfig(configPath)
+	cfg, err := loadConfigWithLogging(configPath, verbose)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
 
+	decisionLogger, err := setupLogger(cfg, verbose)
+	if err != nil {
+		return err
+	}
+	defer decisionLogger.Close()
+
+	input, err := parseHookInput(verbose)
+	if err != nil {
+		return err
+	}
+
+	decision, reason, matchedRule, err := evaluateInput(cfg, &input, verbose)
+	if err != nil {
+		return err
+	}
+
+	if err := decisionLogger.Log(&input, decision, reason, matchedRule); err != nil {
+		log.Printf("Warning: failed to log decision: %v", err)
+	}
+
+	return outputDecision(decision, reason, verbose)
+}
+
+func loadConfigWithLogging(configPath string, verbose bool) (*config.Config, error) {
+	cfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
 	if verbose {
 		log.Printf("Loaded %d rules from %s", len(cfg.Rules), configPath)
 	}
+	return cfg, nil
+}
 
-	// Initialize logger
+func setupLogger(cfg *config.Config, verbose bool) (*logger.Logger, error) {
 	logFile := cfg.Logging.File
 	if logFile == "" {
 		logFile = os.ExpandEnv("$HOME/.claude/claude-hook-guard.log")
@@ -43,47 +72,47 @@ func run(configPath string, verbose bool) error {
 
 	decisionLogger, err := logger.New(cfg.Logging.Enabled, logFile)
 	if err != nil {
-		return fmt.Errorf("failed to initialize logger: %w", err)
+		return nil, fmt.Errorf("failed to initialize logger: %w", err)
 	}
-	defer decisionLogger.Close()
 
 	if verbose && cfg.Logging.Enabled {
 		log.Printf("Logging enabled to: %s", logFile)
 	}
+	return decisionLogger, nil
+}
 
-	// Read hook input from stdin
+func parseHookInput(verbose bool) (hook.Input, error) {
 	inputData, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return fmt.Errorf("failed to read stdin: %w", err)
+		return hook.Input{}, fmt.Errorf("failed to read stdin: %w", err)
 	}
 
 	var input hook.Input
 	if err := json.Unmarshal(inputData, &input); err != nil {
-		return fmt.Errorf("failed to parse hook input: %w", err)
+		return hook.Input{}, fmt.Errorf("failed to parse hook input: %w", err)
 	}
 
 	if verbose {
 		log.Printf("Processing tool: %s", input.ToolName)
 	}
+	return input, nil
+}
 
-	// Create matcher and evaluate
+func evaluateInput(cfg *config.Config, input *hook.Input, verbose bool) (hook.Decision, string, string, error) {
 	m := matcher.New(cfg)
-	decision, reason, matchedRule, err := m.Evaluate(&input)
+	decision, reason, matchedRule, err := m.Evaluate(input)
 	if err != nil {
-		return fmt.Errorf("failed to evaluate rules: %w", err)
+		return "", "", "", fmt.Errorf("failed to evaluate rules: %w", err)
 	}
 
 	if verbose {
 		log.Printf("Decision: %s, Reason: %s, Matched: %s", decision, reason, matchedRule)
 	}
+	return decision, reason, matchedRule, nil
+}
 
-	// Log the decision
-	if err := decisionLogger.Log(&input, decision, reason, matchedRule); err != nil {
-		log.Printf("Warning: failed to log decision: %v", err)
-	}
-
+func outputDecision(decision hook.Decision, reason string, verbose bool) error {
 	// If decision is to ignore (no rules matched), exit without output
-	// This allows Claude Code to show normal permission prompts with "Approve for this session"
 	if decision == hook.DecisionIgnore {
 		if verbose {
 			log.Printf("No rules matched, passing through to Claude Code")
@@ -91,7 +120,6 @@ func run(configPath string, verbose bool) error {
 		return nil
 	}
 
-	// Build output
 	output := hook.Output{
 		HookSpecificOutput: hook.HookSpecificOutput{
 			HookEventName:            "PreToolUse",
@@ -100,7 +128,6 @@ func run(configPath string, verbose bool) error {
 		},
 	}
 
-	// Output JSON
 	outputJSON, err := output.OutputJSON()
 	if err != nil {
 		return fmt.Errorf("failed to marshal output: %w", err)
