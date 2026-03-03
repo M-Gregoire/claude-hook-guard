@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/M-Gregoire/claude-hook-guard/pkg/classifier"
 	"github.com/M-Gregoire/claude-hook-guard/pkg/config"
 	"github.com/M-Gregoire/claude-hook-guard/pkg/hook"
 )
@@ -59,6 +60,34 @@ func (m *Matcher) matchRule(rule config.Rule, input *hook.Input) (bool, error) {
 		}
 	}
 
+	// Check action type
+	if rule.Match.ActionType != nil {
+		actionType, toolFamily := m.classifyTool(input)
+		if !matchString(rule.Match.ActionType, string(actionType)) {
+			return false, nil
+		}
+		// If action_type matched, also check tool_family if specified
+		if rule.Match.ToolFamily != nil {
+			if !matchString(rule.Match.ToolFamily, string(toolFamily)) {
+				return false, nil
+			}
+		}
+	} else if rule.Match.ToolFamily != nil {
+		// Check tool family even if action_type not specified
+		_, toolFamily := m.classifyTool(input)
+		if !matchString(rule.Match.ToolFamily, string(toolFamily)) {
+			return false, nil
+		}
+	}
+
+	// Check path (looks in file_path, path parameters, or CWD)
+	if rule.Match.Path != nil {
+		pathToCheck := m.extractPath(input)
+		if pathToCheck == "" || !matchString(rule.Match.Path, pathToCheck) {
+			return false, nil
+		}
+	}
+
 	// Check CWD
 	if rule.Match.CWD != nil {
 		if !matchString(rule.Match.CWD, input.CWD) {
@@ -74,6 +103,40 @@ func (m *Matcher) matchRule(rule config.Rule, input *hook.Input) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// classifyTool determines the action type and tool family for an input
+func (m *Matcher) classifyTool(input *hook.Input) (classifier.ActionType, classifier.ToolFamily) {
+	// Special handling for Bash - classify based on command
+	if input.ToolName == "Bash" {
+		if cmd, ok := input.ToolInput["command"].(string); ok {
+			return classifier.ClassifyBashCommand(cmd)
+		}
+	}
+
+	actionType, toolFamily, _ := classifier.Classify(input.ToolName)
+	return actionType, toolFamily
+}
+
+// extractPath extracts a file path from the input for matching
+func (m *Matcher) extractPath(input *hook.Input) string {
+	// Check common path parameters
+	if path, ok := input.ToolInput["file_path"].(string); ok {
+		return path
+	}
+	if path, ok := input.ToolInput["path"].(string); ok {
+		return path
+	}
+	// For Bash commands, extract path from command if possible
+	if input.ToolName == "Bash" {
+		if cmd, ok := input.ToolInput["command"].(string); ok {
+			// Try to extract paths from command (simple heuristic)
+			// This is a basic implementation - could be enhanced
+			return cmd
+		}
+	}
+	// Fall back to CWD
+	return input.CWD
 }
 
 // matchString checks if a string matches the given matcher
