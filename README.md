@@ -1,5 +1,11 @@
 # claude-hook-guard
 
+[![CI](https://github.com/M-Gregoire/claude-hook-guard/workflows/CI/badge.svg)](https://github.com/M-Gregoire/claude-hook-guard/actions)
+[![Release](https://img.shields.io/github/v/release/M-Gregoire/claude-hook-guard)](https://github.com/M-Gregoire/claude-hook-guard/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/M-Gregoire/claude-hook-guard)](https://goreportcard.com/report/github.com/M-Gregoire/claude-hook-guard)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/M-Gregoire/claude-hook-guard/blob/master/LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/M-Gregoire/claude-hook-guard)](https://github.com/M-Gregoire/claude-hook-guard/blob/master/go.mod)
+
 A flexible, rule-based permission system for Claude Code hooks. Make intelligent decisions about allowing or denying tool operations based on tool names, parameters, working directory, and more.
 
 ## Features
