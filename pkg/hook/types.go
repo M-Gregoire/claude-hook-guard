@@ -17,9 +17,10 @@ type Input struct {
 type Decision string
 
 const (
-	DecisionAllow Decision = "allow"
-	DecisionDeny  Decision = "deny"
-	DecisionAsk   Decision = "ask"
+	DecisionAllow  Decision = "allow"
+	DecisionDeny   Decision = "deny"
+	DecisionAsk    Decision = "ask"
+	DecisionIgnore Decision = "ignore" // Internal: pass through to Claude Code
 )
 
 // Output represents the JSON output for Claude Code hooks

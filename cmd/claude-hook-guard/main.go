@@ -82,6 +82,15 @@ func run(configPath string, verbose bool) error {
 		log.Printf("Warning: failed to log decision: %v", err)
 	}
 
+	// If decision is to ignore (no rules matched), exit without output
+	// This allows Claude Code to show normal permission prompts with "Approve for this session"
+	if decision == hook.DecisionIgnore {
+		if verbose {
+			log.Printf("No rules matched, passing through to Claude Code")
+		}
+		return nil
+	}
+
 	// Build output
 	output := hook.Output{
 		HookSpecificOutput: hook.HookSpecificOutput{

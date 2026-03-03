@@ -47,8 +47,8 @@ func (m *Matcher) Evaluate(input *hook.Input) (hook.Decision, string, string, er
 		}
 	}
 
-	// No rules matched - default to ask
-	return hook.DecisionAsk, "No matching rules", "", nil
+	// No rules matched - pass through to Claude Code
+	return hook.DecisionIgnore, "No matching rules", "", nil
 }
 
 // matchRule checks if a rule matches the input
