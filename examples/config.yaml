@@ -1,0 +1,60 @@
+rules:
+  # Allow read operations in ~/src
+  - name: allow-read-src
+    description: Allow Read, Grep, Glob in source directories
+    priority: 100
+    match:
+      tool_name:
+        one_of: ["Read", "Grep", "Glob"]
+      parameters:
+        path:
+          regex: "^(/Users/.+/src/|~/src/)"
+    action: allow
+    reason: Safe read operation in source directory
+
+  # Allow safe git commands
+  - name: allow-safe-git
+    description: Allow read-only git commands
+    priority: 100
+    match:
+      tool_name:
+        equals: "Bash"
+      parameters:
+        command:
+          regex: "git.*(status|log|diff|show|branch|remote|fetch)"
+    action: allow
+    reason: Safe git command
+
+  # Deny git push to main/master
+  - name: deny-git-push-main
+    description: Prevent pushing directly to main/master
+    priority: 200
+    match:
+      tool_name:
+        equals: "Bash"
+      parameters:
+        command:
+          regex: "git push.*(origin )?(main|master)"
+    action: deny
+    reason: Direct push to main/master is not allowed
+
+  # Deny destructive operations
+  - name: deny-destructive
+    description: Prevent rm -rf and similar dangerous commands
+    priority: 200
+    match:
+      tool_name:
+        equals: "Bash"
+      parameters:
+        command:
+          regex: "rm\\s+(-[^\\s]*r[^\\s]*f|--recursive.*--force)"
+    action: deny
+    reason: Destructive command blocked for safety
+
+  # Default: ask for everything else
+  - name: default-ask
+    description: Default rule - ask user for permission
+    priority: 0
+    match: {}
+    action: ask
+    reason: No specific rule matched, requesting user approval
