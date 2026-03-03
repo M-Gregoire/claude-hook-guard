@@ -14,11 +14,23 @@ A flexible, rule-based permission system for Claude Code hooks. Make intelligent
 
 ## Installation
 
+### Using go install (recommended)
+
 ```bash
-cd ~/src/claude-hook-guard
-go mod tidy
+go install github.com/M-Gregoire/claude-hook-guard/cmd/claude-hook-guard@latest
+```
+
+### From source
+
+```bash
+git clone https://github.com/M-Gregoire/claude-hook-guard.git
+cd claude-hook-guard
 go build -o claude-hook-guard ./cmd/claude-hook-guard
 ```
+
+### From release binaries
+
+Download pre-built binaries from the [releases page](https://github.com/M-Gregoire/claude-hook-guard/releases).
 
 ## Configuration
 

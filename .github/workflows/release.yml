@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Build binaries
+        run: |
+          # Build for multiple platforms
+          GOOS=darwin GOARCH=amd64 go build -o claude-hook-guard-darwin-amd64 ./cmd/claude-hook-guard
+          GOOS=darwin GOARCH=arm64 go build -o claude-hook-guard-darwin-arm64 ./cmd/claude-hook-guard
+          GOOS=linux GOARCH=amd64 go build -o claude-hook-guard-linux-amd64 ./cmd/claude-hook-guard
+          GOOS=linux GOARCH=arm64 go build -o claude-hook-guard-linux-arm64 ./cmd/claude-hook-guard
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            claude-hook-guard-darwin-amd64
+            claude-hook-guard-darwin-arm64
+            claude-hook-guard-linux-amd64
+            claude-hook-guard-linux-arm64
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
