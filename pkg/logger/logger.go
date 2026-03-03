@@ -38,13 +38,13 @@ func New(enabled bool, logPath string) (*Logger, error) {
 
 // LogEntry represents a single log entry
 type LogEntry struct {
-	Timestamp  string                 `json:"timestamp"`
-	ToolName   string                 `json:"tool_name"`
-	ToolInput  map[string]interface{} `json:"tool_input"`
-	CWD        string                 `json:"cwd,omitempty"`
-	Decision   hook.Decision          `json:"decision"`
-	Reason     string                 `json:"reason"`
-	MatchedBy  string                 `json:"matched_by,omitempty"`
+	Timestamp string                 `json:"timestamp"`
+	ToolName  string                 `json:"tool_name"`
+	ToolInput map[string]interface{} `json:"tool_input"`
+	CWD       string                 `json:"cwd,omitempty"`
+	Decision  hook.Decision          `json:"decision"`
+	Reason    string                 `json:"reason"`
+	MatchedBy string                 `json:"matched_by,omitempty"`
 }
 
 // Log logs a decision
@@ -54,13 +54,13 @@ func (l *Logger) Log(input *hook.Input, decision hook.Decision, reason string, m
 	}
 
 	entry := LogEntry{
-		Timestamp:  time.Now().Format(time.RFC3339),
-		ToolName:   input.ToolName,
-		ToolInput:  input.ToolInput,
-		CWD:        input.CWD,
-		Decision:   decision,
-		Reason:     reason,
-		MatchedBy:  matchedRule,
+		Timestamp: time.Now().Format(time.RFC3339),
+		ToolName:  input.ToolName,
+		ToolInput: input.ToolInput,
+		CWD:       input.CWD,
+		Decision:  decision,
+		Reason:    reason,
+		MatchedBy: matchedRule,
 	}
 
 	data, err := json.Marshal(entry)

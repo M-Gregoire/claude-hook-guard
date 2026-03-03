@@ -21,12 +21,12 @@ type Logging struct {
 
 // Rule represents a single permission rule
 type Rule struct {
-	Name        string            `yaml:"name"`
-	Description string            `yaml:"description,omitempty"`
-	Match       Match             `yaml:"match"`
-	Action      string            `yaml:"action"` // allow, deny, ask
-	Reason      string            `yaml:"reason,omitempty"`
-	Priority    int               `yaml:"priority,omitempty"` // Higher priority rules evaluated first
+	Name        string `yaml:"name"`
+	Description string `yaml:"description,omitempty"`
+	Match       Match  `yaml:"match"`
+	Action      string `yaml:"action"` // allow, deny, ask
+	Reason      string `yaml:"reason,omitempty"`
+	Priority    int    `yaml:"priority,omitempty"` // Higher priority rules evaluated first
 }
 
 // Match defines the conditions for a rule to match

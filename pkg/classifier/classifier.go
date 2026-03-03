@@ -4,7 +4,9 @@ package classifier
 type ActionType string
 
 const (
-	ActionRead  ActionType = "read"
+	// ActionRead represents read-only operations
+	ActionRead ActionType = "read"
+	// ActionWrite represents write operations
 	ActionWrite ActionType = "write"
 )
 
@@ -12,11 +14,16 @@ const (
 type ToolFamily string
 
 const (
-	FamilySearch ToolFamily = "search" // grep, rg, ag, find, Grep, Glob
-	FamilyEdit   ToolFamily = "edit"   // Edit, sed, awk
-	FamilyFile   ToolFamily = "file"   // Read, Write, cat, touch
-	FamilyGit    ToolFamily = "git"    // git commands via Bash
-	FamilyShell  ToolFamily = "shell"  // Other bash commands
+	// FamilySearch represents search tools (grep, rg, ag, find, Grep, Glob)
+	FamilySearch ToolFamily = "search"
+	// FamilyEdit represents edit operations (Edit, sed, awk)
+	FamilyEdit ToolFamily = "edit"
+	// FamilyFile represents file operations (Read, Write, cat, touch)
+	FamilyFile ToolFamily = "file"
+	// FamilyGit represents git commands via Bash
+	FamilyGit ToolFamily = "git"
+	// FamilyShell represents other bash commands
+	FamilyShell ToolFamily = "shell"
 )
 
 // ToolInfo contains classification information for a tool

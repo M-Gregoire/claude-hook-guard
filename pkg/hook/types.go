@@ -17,10 +17,14 @@ type Input struct {
 type Decision string
 
 const (
-	DecisionAllow  Decision = "allow"
-	DecisionDeny   Decision = "deny"
-	DecisionAsk    Decision = "ask"
-	DecisionIgnore Decision = "ignore" // Internal: pass through to Claude Code
+	// DecisionAllow automatically approves the operation
+	DecisionAllow Decision = "allow"
+	// DecisionDeny blocks the operation
+	DecisionDeny Decision = "deny"
+	// DecisionAsk prompts the user for approval
+	DecisionAsk Decision = "ask"
+	// DecisionIgnore passes through to Claude Code (internal use)
+	DecisionIgnore Decision = "ignore"
 )
 
 // Output represents the JSON output for Claude Code hooks
