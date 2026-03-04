@@ -219,10 +219,44 @@ func matchParameters(criteria map[string]interface{}, params map[string]interfac
 			return false
 		}
 
-		// Simple equality check for now
-		// TODO: Add more sophisticated matching for nested objects
-		if fmt.Sprintf("%v", actualValue) != fmt.Sprintf("%v", expectedValue) {
-			return false
+		// Check if expectedValue is a map (StringMatcher from YAML)
+		if criteriaMap, ok := expectedValue.(map[string]interface{}); ok {
+			// Convert to StringMatcher and use matchString
+			matcher := &config.StringMatcher{}
+			if equals, ok := criteriaMap["equals"].(string); ok {
+				matcher.Equals = equals
+			}
+			if regex, ok := criteriaMap["regex"].(string); ok {
+				matcher.Regex = regex
+			}
+			if contains, ok := criteriaMap["contains"].(string); ok {
+				matcher.Contains = contains
+			}
+			if prefix, ok := criteriaMap["prefix"].(string); ok {
+				matcher.Prefix = prefix
+			}
+			if suffix, ok := criteriaMap["suffix"].(string); ok {
+				matcher.Suffix = suffix
+			}
+			if oneOf, ok := criteriaMap["one_of"].([]interface{}); ok {
+				matcher.OneOf = make([]string, len(oneOf))
+				for i, v := range oneOf {
+					if str, ok := v.(string); ok {
+						matcher.OneOf[i] = str
+					}
+				}
+			}
+
+			// Match against the actual value
+			actualStr := fmt.Sprintf("%v", actualValue)
+			if !matchString(matcher, actualStr) {
+				return false
+			}
+		} else {
+			// Simple equality check for non-StringMatcher values
+			if fmt.Sprintf("%v", actualValue) != fmt.Sprintf("%v", expectedValue) {
+				return false
+			}
 		}
 	}
 
