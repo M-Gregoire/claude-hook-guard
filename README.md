@@ -148,6 +148,53 @@ Note: Commands with output redirection (`>`, `>>`) are classified as write opera
   action: allow
 ```
 
+### Skill Matching
+
+Control permissions for Claude Code skills (e.g., from https://github.com/anthropics/skills):
+
+Skills are invoked with `tool_name: "Skill"` and the skill name in `parameters.skill`.
+
+**Use fully qualified names** (`plugin:skill`) to avoid ambiguity when multiple plugins have skills with the same name.
+
+**Example: Auto-approve document creation skills**
+```yaml
+- name: allow-document-skills
+  match:
+    tool_name:
+      equals: "Skill"
+    parameters:
+      skill:
+        one_of: ["document-skills:pdf", "document-skills:docx", "document-skills:pptx"]
+  action: allow
+  reason: Safe document creation skill from official Anthropic plugin
+```
+
+**Example: Match all skills from a trusted plugin**
+```yaml
+- name: allow-all-document-skills
+  match:
+    tool_name:
+      equals: "Skill"
+    parameters:
+      skill:
+        prefix: "document-skills:"
+  action: allow
+  reason: All skills from trusted document-skills plugin
+```
+
+**Example: Require approval for builder skills**
+```yaml
+- name: ask-builder-skills
+  match:
+    tool_name:
+      equals: "Skill"
+    parameters:
+      skill:
+        one_of: ["mcp-builder", "skill-creator", "web-artifacts-builder"]
+  action: ask
+  reason: Builder skill requires approval
+```
+
 ### MCP (Model Context Protocol) Matching
 
 Control permissions for MCP server operations by matching on server name and tool name:
@@ -228,7 +275,7 @@ String matchers support multiple matching strategies:
   reason: Optional reason shown to user
 ```
 
-**Note:** You can use `action_type`/`tool_family` for semantic matching OR `tool_name` for specific tools. For MCP tools, use `mcp_server` and `mcp_tool` matchers. Semantic matching is recommended for maintainability.
+**Note:** You can use `action_type`/`tool_family` for semantic matching OR `tool_name` for specific tools. For MCP tools, use `mcp_server` and `mcp_tool` matchers. For skills, match on `tool_name: "Skill"` and use `parameters.skill` to match the skill name. Semantic matching is recommended for maintainability.
 
 ## Logging
 

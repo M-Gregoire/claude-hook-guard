@@ -95,5 +95,32 @@ rules:
   #   action: allow
   #   reason: Trusted MCP server
 
+  # Skill Examples: Auto-approve document creation skills
+  # Skills from https://github.com/anthropics/skills
+  # Use fully qualified names (plugin:skill) to avoid ambiguity
+  - name: allow-document-skills
+    description: Auto-approve Anthropic document creation/editing skills
+    priority: 100
+    match:
+      tool_name:
+        equals: "Skill"
+      parameters:
+        skill:
+          one_of: ["document-skills:pdf", "document-skills:docx", "document-skills:pptx", "document-skills:xlsx"]
+    action: allow
+    reason: Safe document creation skill from official Anthropic plugin
+
+  # Skill Examples: Match by prefix for all skills from a trusted plugin
+  # - name: allow-all-document-skills
+  #   priority: 100
+  #   match:
+  #     tool_name:
+  #       equals: "Skill"
+  #     parameters:
+  #       skill:
+  #         prefix: "document-skills:"
+  #   action: allow
+  #   reason: All skills from trusted document-skills plugin
+
 # Note: When no rules match, the hook passes through to Claude Code,
 # allowing the normal permission prompt with "Approve for this session"
