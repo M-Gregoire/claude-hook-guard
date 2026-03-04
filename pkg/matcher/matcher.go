@@ -55,6 +55,7 @@ func (m *Matcher) Evaluate(input *hook.Input) (hook.Decision, string, string, er
 func (m *Matcher) matchRule(rule config.Rule, input *hook.Input) (bool, error) {
 	return m.matchesToolName(rule, input) &&
 		m.matchesActionTypeAndFamily(rule, input) &&
+		m.matchesMCP(rule, input) &&
 		m.matchesPath(rule, input) &&
 		m.matchesCWD(rule, input) &&
 		m.matchesParameters(rule, input), nil
@@ -66,6 +67,36 @@ func (m *Matcher) matchesToolName(rule config.Rule, input *hook.Input) bool {
 		return true
 	}
 	return matchString(rule.Match.ToolName, input.ToolName)
+}
+
+// matchesMCP checks if MCP server and tool match
+func (m *Matcher) matchesMCP(rule config.Rule, input *hook.Input) bool {
+	if rule.Match.MCPServer == nil && rule.Match.MCPTool == nil {
+		return true
+	}
+
+	// Parse the tool name to extract MCP server and tool
+	server, tool, isMCP := hook.ParseMCPTool(input.ToolName)
+	if !isMCP {
+		// Tool is not an MCP tool, only match if neither MCP field is specified
+		return rule.Match.MCPServer == nil && rule.Match.MCPTool == nil
+	}
+
+	// Check MCP server if specified
+	if rule.Match.MCPServer != nil {
+		if !matchString(rule.Match.MCPServer, server) {
+			return false
+		}
+	}
+
+	// Check MCP tool if specified
+	if rule.Match.MCPTool != nil {
+		if !matchString(rule.Match.MCPTool, tool) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // matchesActionTypeAndFamily checks if action type and tool family match

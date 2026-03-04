@@ -35,6 +35,8 @@ type Match struct {
 	ToolName   *StringMatcher         `yaml:"tool_name,omitempty"`
 	ActionType *StringMatcher         `yaml:"action_type,omitempty"` // read, write
 	ToolFamily *StringMatcher         `yaml:"tool_family,omitempty"` // search, edit, file, git, etc.
+	MCPServer  *StringMatcher         `yaml:"mcp_server,omitempty"`  // MCP server name (e.g., "atlassian")
+	MCPTool    *StringMatcher         `yaml:"mcp_tool,omitempty"`    // MCP tool name (e.g., "searchJiraIssuesUsingJql")
 	CWD        *StringMatcher         `yaml:"cwd,omitempty"`
 	Path       *StringMatcher         `yaml:"path,omitempty"` // Matches file_path, path, or command path
 	Parameters map[string]interface{} `yaml:"parameters,omitempty"`

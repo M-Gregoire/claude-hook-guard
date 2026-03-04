@@ -61,5 +61,39 @@ rules:
     action: deny
     reason: Direct push to main/master is not allowed
 
+  # MCP Examples: Allow all read operations from atlassian MCP server
+  - name: allow-atlassian-reads
+    description: Allow read-only Jira/Confluence operations
+    priority: 100
+    match:
+      mcp_server:
+        equals: "atlassian"
+      mcp_tool:
+        regex: "^(get|search|list|fetch|read).*"
+    action: allow
+    reason: Safe read operation on Atlassian services
+
+  # MCP Examples: Require approval for Atlassian write operations
+  - name: ask-atlassian-writes
+    description: Prompt for Jira/Confluence modifications
+    priority: 100
+    match:
+      mcp_server:
+        equals: "atlassian"
+      mcp_tool:
+        regex: "^(create|update|delete|edit|add).*"
+    action: ask
+    reason: Modification to Atlassian resources requires approval
+
+  # MCP Examples: Blanket approve all operations from a trusted MCP server
+  # - name: allow-trusted-mcp
+  #   description: Auto-approve all operations from trusted MCP server
+  #   priority: 90
+  #   match:
+  #     mcp_server:
+  #       equals: "trusted-server"
+  #   action: allow
+  #   reason: Trusted MCP server
+
 # Note: When no rules match, the hook passes through to Claude Code,
 # allowing the normal permission prompt with "Approve for this session"

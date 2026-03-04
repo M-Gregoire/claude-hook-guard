@@ -1,6 +1,9 @@
 package hook
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 // Input represents the JSON input from Claude Code hooks
 type Input struct {
@@ -43,4 +46,20 @@ type HookSpecificOutput struct {
 // OutputJSON returns the output as formatted JSON
 func (o *Output) OutputJSON() ([]byte, error) {
 	return json.MarshalIndent(o, "", "  ")
+}
+
+// ParseMCPTool parses an MCP tool name in the format "mcp__<server>__<tool>"
+// and returns (server, tool, isMCP). If the tool name is not an MCP tool,
+// isMCP will be false.
+func ParseMCPTool(toolName string) (server string, tool string, isMCP bool) {
+	if !strings.HasPrefix(toolName, "mcp__") {
+		return "", "", false
+	}
+
+	parts := strings.SplitN(toolName, "__", 3)
+	if len(parts) != 3 {
+		return "", "", false
+	}
+
+	return parts[1], parts[2], true
 }

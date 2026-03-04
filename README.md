@@ -11,6 +11,7 @@ A flexible, rule-based permission system for Claude Code hooks. Make intelligent
 ## Features
 
 - **Semantic matching**: Match by `action_type` (read/write) and `tool_family` (search/edit/file/git)
+- **MCP support**: Control permissions for MCP (Model Context Protocol) server operations
 - **Rule-based matching**: Define complex permission rules using YAML configuration
 - **Advanced string matching**: Supports regex, prefix/suffix, contains, and exact matching
 - **Priority system**: Control rule evaluation order with priorities
@@ -147,6 +148,47 @@ Note: Commands with output redirection (`>`, `>>`) are classified as write opera
   action: allow
 ```
 
+### MCP (Model Context Protocol) Matching
+
+Control permissions for MCP server operations by matching on server name and tool name:
+
+**MCP Server**: The MCP server providing the tool (e.g., `atlassian`, `github`)
+**MCP Tool**: The specific operation on that server (e.g., `searchJiraIssuesUsingJql`, `getJiraIssue`)
+
+**Example: Allow all read operations from atlassian MCP**
+```yaml
+- name: allow-atlassian-reads
+  match:
+    mcp_server:
+      equals: "atlassian"
+    mcp_tool:
+      regex: "^(get|search|list|fetch|read).*"
+  action: allow
+  reason: Safe read operation on Atlassian services
+```
+
+**Example: Require approval for Atlassian writes**
+```yaml
+- name: ask-atlassian-writes
+  match:
+    mcp_server:
+      equals: "atlassian"
+    mcp_tool:
+      regex: "^(create|update|delete|edit|add).*"
+  action: ask
+  reason: Modification to Atlassian resources requires approval
+```
+
+**Example: Blanket approve all operations from a trusted MCP server**
+```yaml
+- name: allow-trusted-mcp
+  match:
+    mcp_server:
+      equals: "trusted-server"
+  action: allow
+  reason: Trusted MCP server
+```
+
 ### String Matching
 
 String matchers support multiple matching strategies:
@@ -171,6 +213,10 @@ String matchers support multiple matching strategies:
       equals: "search"
     tool_name:         # Optional: specific tool name
       equals: "Bash"
+    mcp_server:        # Optional: MCP server name (e.g., "atlassian")
+      equals: "atlassian"
+    mcp_tool:          # Optional: MCP tool name (e.g., "searchJiraIssuesUsingJql")
+      regex: "^search.*"
     path:              # Optional: matches file_path, path parameter, or command
       regex: "^/Users/.+/src/"
     cwd:               # Optional: current working directory
@@ -182,7 +228,7 @@ String matchers support multiple matching strategies:
   reason: Optional reason shown to user
 ```
 
-**Note:** You can use `action_type`/`tool_family` for semantic matching OR `tool_name` for specific tools. Semantic matching is recommended for maintainability.
+**Note:** You can use `action_type`/`tool_family` for semantic matching OR `tool_name` for specific tools. For MCP tools, use `mcp_server` and `mcp_tool` matchers. Semantic matching is recommended for maintainability.
 
 ## Logging
 

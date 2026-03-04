@@ -1,0 +1,51 @@
+#+TITLE: claude-hook-guard TODO
+#+AUTHOR: Grégoire Cadène-Martinache
+#+DATE: 2026-03-04
+
+* Tasks
+
+** TODO Add support for MCP
+:PROPERTIES:
+:CREATED: [2026-03-04]
+:END:
+
+Add the ability to configure permissions for MCP (Model Context Protocol) servers and tools.
+
+Requirements:
+- Allow/deny all actions from a specific MCP server (e.g., all atlassian MCP operations)
+- Allow/deny specific operation types on an MCP server (e.g., only read operations on atlassian MCP)
+- Support granular control similar to existing tool permissions
+
+Example use cases:
+- Allow all atlassian MCP read operations but require approval for writes
+- Blanket approve all operations from a trusted MCP server
+
+** TODO Define extensible system for path extraction and matching
+:PROPERTIES:
+:CREATED: [2026-03-04]
+:END:
+
+Create a configuration file/system that defines how to extract the path of an action from a command and match it against approved/denied paths.
+
+Challenges:
+- Absolute vs relative paths:
+  - "cat /test" → path is "/test"
+  - "cat test" → path is "$(pwd)/test" (current working directory + relative path)
+- Commands with implicit paths:
+  - "cd" with no arguments defaults to "cd ~"
+  - Need to infer the actual target path
+- Commands without paths:
+  - Some commands don't operate on filesystem paths
+  - System needs to determine when path extraction is applicable
+
+Requirements:
+- Extensible system to handle different command types
+- Support for command-specific path inference rules
+- Ability to resolve relative paths to absolute paths
+- Handle edge cases and default behaviors (e.g., "cd" → "~")
+
+This is tricky and requires careful consideration of:
+- Shell semantics and default behaviors
+- How to maintain a flexible, extensible rule system
+- Performance implications of path resolution
+- Edge cases where commands may operate on multiple paths
