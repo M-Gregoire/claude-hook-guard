@@ -26,9 +26,9 @@ var defaultGoToolsFamily string
 
 // FamilyDefinition represents a tool family loaded from YAML
 type FamilyDefinition struct {
-	Name         string   `yaml:"name"`
-	Description  string   `yaml:"description"`
-	ClaudeTools  []string `yaml:"claude_tools"`
+	Name          string   `yaml:"name"`
+	Description   string   `yaml:"description"`
+	ClaudeTools   []string `yaml:"claude_tools"`
 	ShellCommands []string `yaml:"shell_commands"`
 }
 

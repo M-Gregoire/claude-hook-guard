@@ -35,7 +35,11 @@ func run(configPath string, verbose bool) error {
 	if err != nil {
 		return err
 	}
-	defer decisionLogger.Close()
+	defer func() {
+		if err := decisionLogger.Close(); err != nil {
+			log.Printf("Warning: failed to close logger: %v", err)
+		}
+	}()
 
 	input, err := parseHookInput(verbose)
 	if err != nil {
