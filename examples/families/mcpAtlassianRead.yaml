@@ -1,0 +1,30 @@
+name: mcpAtlassianRead
+description: Read-only Atlassian MCP operations (Jira, Confluence)
+claude_tools:
+  # Jira read operations
+  - mcp__plugin_atlassian_atlassian__getJiraIssue
+  - mcp__plugin_atlassian_atlassian__searchJiraIssuesUsingJql
+  - mcp__plugin_atlassian_atlassian__getVisibleJiraProjects
+  - mcp__plugin_atlassian_atlassian__getJiraProjectIssueTypesMetadata
+  - mcp__plugin_atlassian_atlassian__getJiraIssueTypeMetaWithFields
+  - mcp__plugin_atlassian_atlassian__getJiraIssueRemoteIssueLinks
+  - mcp__plugin_atlassian_atlassian__getTransitionsForJiraIssue
+  - mcp__plugin_atlassian_atlassian__lookupJiraAccountId
+
+  # Confluence read operations
+  - mcp__plugin_atlassian_atlassian__getConfluencePage
+  - mcp__plugin_atlassian_atlassian__getConfluencePageDescendants
+  - mcp__plugin_atlassian_atlassian__getConfluencePageFooterComments
+  - mcp__plugin_atlassian_atlassian__getConfluencePageInlineComments
+  - mcp__plugin_atlassian_atlassian__getConfluenceCommentChildren
+  - mcp__plugin_atlassian_atlassian__getConfluenceSpaces
+  - mcp__plugin_atlassian_atlassian__getPagesInConfluenceSpace
+  - mcp__plugin_atlassian_atlassian__searchConfluenceUsingCql
+
+  # General read operations
+  - mcp__plugin_atlassian_atlassian__getAccessibleAtlassianResources
+  - mcp__plugin_atlassian_atlassian__atlassianUserInfo
+  - mcp__plugin_atlassian_atlassian__search
+  - mcp__plugin_atlassian_atlassian__jiraRead
+  - mcp__plugin_atlassian_atlassian__fetch
+shell_commands: []

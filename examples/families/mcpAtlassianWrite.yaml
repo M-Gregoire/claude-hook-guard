@@ -1,0 +1,17 @@
+name: mcpAtlassianWrite
+description: Write/modify Atlassian MCP operations (Jira, Confluence)
+claude_tools:
+  # Jira write operations
+  - mcp__plugin_atlassian_atlassian__createJiraIssue
+  - mcp__plugin_atlassian_atlassian__editJiraIssue
+  - mcp__plugin_atlassian_atlassian__addCommentToJiraIssue
+  - mcp__plugin_atlassian_atlassian__addWorklogToJiraIssue
+  - mcp__plugin_atlassian_atlassian__transitionJiraIssue
+  - mcp__plugin_atlassian_atlassian__jiraWrite
+
+  # Confluence write operations
+  - mcp__plugin_atlassian_atlassian__createConfluencePage
+  - mcp__plugin_atlassian_atlassian__updateConfluencePage
+  - mcp__plugin_atlassian_atlassian__createConfluenceFooterComment
+  - mcp__plugin_atlassian_atlassian__createConfluenceInlineComment
+shell_commands: []
