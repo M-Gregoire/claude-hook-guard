@@ -15,25 +15,40 @@ These families are automatically created in `~/.config/claude-hook-guard/familie
 
 ### MCP Atlassian Families
 
-**mcpAtlassianRead.yaml** - Read-only Atlassian MCP operations
+**mcpAtlassianRead.yaml** - Read-only Atlassian MCP operations (21 tools)
 - Jira: Get issues, search, view projects
 - Confluence: Get pages, search, view comments
 - Use this family to auto-approve safe read operations on Jira/Confluence
 
-**mcpAtlassianWrite.yaml** - Write/modify Atlassian MCP operations
+**mcpAtlassianWrite.yaml** - Write/modify Atlassian MCP operations (10 tools)
 - Jira: Create/edit issues, add comments, transition tickets
 - Confluence: Create/update pages, add comments
 - Use this family to require approval or block write operations
+
+### MCP Datadog Families
+
+**mcpDatadogRead.yaml** - Read-only Datadog MCP operations (18 tools)
+- Analyze: Logs
+- Get: Incidents, metrics, notebooks, traces
+- Search: Dashboards, events, hosts, logs, metrics, monitors, notebooks, RUM events, services, spans
+- Use this family to auto-approve safe read operations on Datadog observability platform
+
+**mcpDatadogWrite.yaml** - Write/modify Datadog MCP operations (2 tools)
+- Create/edit notebooks
+- Use this family to require approval for modifications
 
 ## Usage
 
 ### Copy Example Families
 
-To use an example family, copy it to your families directory:
+To use example families, copy them to your families directory:
 
 ```bash
-cp examples/families/mcpAtlassianRead.yaml ~/.config/claude-hook-guard/families/
-cp examples/families/mcpAtlassianWrite.yaml ~/.config/claude-hook-guard/families/
+# Atlassian (Jira/Confluence)
+cp examples/families/mcpAtlassian*.yaml ~/.config/claude-hook-guard/families/
+
+# Datadog (observability platform)
+cp examples/families/mcpDatadog*.yaml ~/.config/claude-hook-guard/families/
 ```
 
 ### Configure Rules
@@ -59,6 +74,24 @@ rules:
         equals: "mcpAtlassianWrite"
     action: ask
     reason: Atlassian modification requires approval
+
+  # Auto-approve Datadog read operations
+  - name: allow-datadog-reads
+    priority: 100
+    match:
+      tool_family:
+        equals: "mcpDatadogRead"
+    action: allow
+    reason: Safe read operation on Datadog observability platform
+
+  # Require approval for Datadog writes
+  - name: ask-datadog-writes
+    priority: 100
+    match:
+      tool_family:
+        equals: "mcpDatadogWrite"
+    action: ask
+    reason: Datadog modification requires approval
 ```
 
 ## Creating Custom Families

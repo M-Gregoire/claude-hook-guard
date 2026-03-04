@@ -1,0 +1,7 @@
+name: mcpDatadogWrite
+description: Write/modify Datadog MCP operations (create/edit notebooks, etc.)
+claude_tools:
+  # Notebook operations
+  - mcp__datadog__create_datadog_notebook
+  - mcp__datadog__edit_datadog_notebook
+shell_commands: []
