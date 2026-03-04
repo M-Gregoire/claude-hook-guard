@@ -1,5 +1,9 @@
 package classifier
 
+import (
+	"strings"
+)
+
 // ActionType represents the type of action a tool performs
 type ActionType string
 
@@ -13,109 +17,118 @@ const (
 // ToolFamily represents a logical grouping of related tools
 type ToolFamily string
 
-const (
-	// FamilySearch represents search tools (grep, rg, ag, find, Grep, Glob)
-	FamilySearch ToolFamily = "search"
-	// FamilyEdit represents edit operations (Edit, sed, awk)
-	FamilyEdit ToolFamily = "edit"
-	// FamilyFile represents file operations (Read, Write, cat, touch)
-	FamilyFile ToolFamily = "file"
-	// FamilyGit represents git commands via Bash
-	FamilyGit ToolFamily = "git"
-	// FamilyShell represents other bash commands
-	FamilyShell ToolFamily = "shell"
-)
-
 // ToolInfo contains classification information for a tool
 type ToolInfo struct {
 	ActionType ActionType
 	Family     ToolFamily
 }
 
-// toolClassification maps tool names to their classification
-var toolClassification = map[string]ToolInfo{
-	// Claude Code tools - File operations
-	"Read":  {ActionRead, FamilyFile},
-	"Write": {ActionWrite, FamilyFile},
-	"Edit":  {ActionWrite, FamilyEdit},
+// Classifier holds loaded tool classifications
+type Classifier struct {
+	toolMap map[string]ToolInfo
+}
 
-	// Claude Code tools - Search operations
-	"Grep": {ActionRead, FamilySearch},
-	"Glob": {ActionRead, FamilySearch},
+// NewClassifier creates a new classifier with families loaded from a directory
+func NewClassifier(familiesDir string) (*Classifier, error) {
+	_, toolMap, err := LoadFamilies(familiesDir)
+	if err != nil {
+		return nil, err
+	}
 
-	// Bash is special - classified based on command content
-	"Bash": {ActionRead, FamilyShell}, // Default, can be overridden
+	return &Classifier{toolMap: toolMap}, nil
 }
 
 // Classify returns the action type and tool family for a given tool
-func Classify(toolName string) (ActionType, ToolFamily, bool) {
-	info, ok := toolClassification[toolName]
+func (c *Classifier) Classify(toolName string) (ActionType, ToolFamily, bool) {
+	info, ok := c.toolMap[toolName]
 	if !ok {
-		// Unknown tool - default to read/shell for safety
-		return ActionRead, FamilyShell, false
+		// Unknown tool - return false
+		return "", "", false
 	}
 	return info.ActionType, info.Family, true
 }
 
 // ClassifyBashCommand attempts to classify a bash command
-func ClassifyBashCommand(command string) (ActionType, ToolFamily) {
-	// Check for git commands
-	if containsAny(command, []string{"git "}) {
-		// Git read operations
-		if containsAny(command, []string{"git status", "git log", "git diff", "git show", "git branch", "git remote", "git fetch"}) {
-			return ActionRead, FamilyGit
+func (c *Classifier) ClassifyBashCommand(command string) (ActionType, ToolFamily) {
+	// Extract the base command (first word)
+	parts := strings.Fields(command)
+	if len(parts) == 0 {
+		return ActionRead, ""
+	}
+
+	baseCmd := parts[0]
+
+	// Check if we have classification for this command
+	if info, ok := c.toolMap[baseCmd]; ok {
+		// For git, refine action type based on subcommand
+		if baseCmd == "git" && len(parts) > 1 {
+			return classifyGitCommand(parts[1]), info.Family
 		}
-		// Git write operations
-		if containsAny(command, []string{"git push", "git commit", "git add", "git merge", "git rebase"}) {
-			return ActionWrite, FamilyGit
-		}
-		return ActionRead, FamilyGit // Default git to read
+		return info.ActionType, info.Family
 	}
 
-	// Check for search commands
-	if containsAny(command, []string{"grep ", "rg ", "ag ", "find ", "locate "}) {
-		return ActionRead, FamilySearch
-	}
-
-	// Check for edit commands
-	if containsAny(command, []string{"sed ", "awk ", "vim ", "nano ", "emacs "}) {
-		return ActionWrite, FamilyEdit
-	}
-
-	// Check for write operations
-	// Redirection operators indicate write
+	// Check for redirection operators (indicates write)
 	if containsAny(command, []string{">", ">>", "tee "}) {
-		return ActionWrite, FamilyShell
-	}
-	// File manipulation commands
-	if containsAny(command, []string{"rm ", "mv ", "cp ", "touch ", "mkdir ", "chmod ", "chown "}) {
-		return ActionWrite, FamilyShell
+		return ActionWrite, ""
 	}
 
-	// Default to read for safety
-	return ActionRead, FamilyShell
+	// Unknown command - default to read for safety
+	return ActionRead, ""
 }
 
-// containsAny checks if the string contains any of the substrings
-func containsAny(s string, substrings []string) bool {
-	for _, substr := range substrings {
-		if contains(s, substr) {
+// classifyGitCommand determines if a git subcommand is read or write
+func classifyGitCommand(subcommand string) ActionType {
+	readCommands := map[string]bool{
+		"status": true, "log": true, "diff": true, "show": true,
+		"branch": true, "remote": true, "fetch": true, "ls-files": true,
+		"ls-remote": true, "rev-parse": true, "describe": true,
+	}
+
+	if readCommands[subcommand] {
+		return ActionRead
+	}
+
+	// push, commit, add, merge, rebase, etc. are write
+	return ActionWrite
+}
+
+// containsAny checks if a string contains any of the substrings
+func containsAny(str string, substrs []string) bool {
+	for _, substr := range substrs {
+		if strings.Contains(str, substr) {
 			return true
 		}
 	}
 	return false
 }
 
-// contains is a simple substring check
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && findSubstring(s, substr))
+// Global classifier instance (initialized on demand)
+var globalClassifier *Classifier
+
+// InitGlobalClassifier initializes the global classifier
+func InitGlobalClassifier(familiesDir string) error {
+	var err error
+	globalClassifier, err = NewClassifier(familiesDir)
+	return err
 }
 
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
+// Classify uses the global classifier (for backward compatibility)
+func Classify(toolName string) (ActionType, ToolFamily, bool) {
+	if globalClassifier == nil {
+		// No families loaded - return unknown
+		return "", "", false
 	}
-	return false
+	return globalClassifier.Classify(toolName)
+}
+
+// ClassifyBashCommand uses the global classifier (for backward compatibility)
+func ClassifyBashCommand(command string) (ActionType, ToolFamily) {
+	if globalClassifier == nil {
+		// No families loaded - analyze command directly
+		if containsAny(command, []string{">", ">>", "tee "}) {
+			return ActionWrite, ""
+		}
+		return ActionRead, ""
+	}
+	return globalClassifier.ClassifyBashCommand(command)
 }

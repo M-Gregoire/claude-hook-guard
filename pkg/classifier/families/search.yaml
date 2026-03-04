@@ -1,0 +1,17 @@
+# Search tools family
+name: search
+description: Tools for searching and finding files/content
+
+# Claude Code tools
+claude_tools:
+  - Grep
+  - Glob
+
+# Shell commands
+shell_commands:
+  - grep
+  - rg
+  - ag
+  - find
+  - fd
+  - ack

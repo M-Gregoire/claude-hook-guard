@@ -1,0 +1,35 @@
+# Go development tools family
+name: gotools
+description: Go development and tooling commands
+
+# Shell commands
+shell_commands:
+  # Formatters
+  - gofmt
+  - goimports
+  - gofumpt
+
+  # Linters
+  - golangci-lint
+  - staticcheck
+  - go-critic
+  - revive
+  - golint
+
+  # Analysis tools
+  - gocyclo
+  - govet
+  - errcheck
+  - ineffassign
+  - misspell
+
+  # Build and test
+  - go           # go build, go test, go run, etc.
+  - gotestsum
+  - gotest
+
+  # Other tools
+  - gopls
+  - delve
+  - dlv
+  - gore        # Go REPL

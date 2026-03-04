@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/M-Gregoire/claude-hook-guard/pkg/classifier"
 	"github.com/M-Gregoire/claude-hook-guard/pkg/config"
 	"github.com/M-Gregoire/claude-hook-guard/pkg/hook"
 	"github.com/M-Gregoire/claude-hook-guard/pkg/logger"
@@ -61,6 +62,19 @@ func loadConfigWithLogging(configPath string, verbose bool) (*config.Config, err
 	if verbose {
 		log.Printf("Loaded %d rules from %s", len(cfg.Rules), configPath)
 	}
+
+	// Initialize global classifier with families
+	if err := classifier.InitGlobalClassifier(cfg.FamiliesDir); err != nil {
+		return nil, fmt.Errorf("failed to load tool families: %w", err)
+	}
+	if verbose {
+		familiesDir := cfg.FamiliesDir
+		if familiesDir == "" {
+			familiesDir = "~/.config/claude-hook-guard/families"
+		}
+		log.Printf("Loaded tool families from %s", familiesDir)
+	}
+
 	return cfg, nil
 }
 

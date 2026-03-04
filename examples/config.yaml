@@ -1,6 +1,11 @@
 # Example configuration for claude-hook-guard
 # Copy to ~/.config/claude-hook-guard/config.yaml and customize
 
+# families_dir: Path to directory containing tool family definitions
+# If not specified, defaults to ~/.config/claude-hook-guard/families
+# Default families will be created automatically on first run
+# families_dir: $HOME/.config/claude-hook-guard/families
+
 logging:
   enabled: true
   file: $HOME/.claude/claude-hook-guard.log

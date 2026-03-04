@@ -1,0 +1,11 @@
+# Git tools family
+name: git
+description: Git version control commands
+
+# Shell commands (git is always used via Bash in Claude Code)
+shell_commands:
+  - git
+  - gh        # GitHub CLI
+  - git-lfs
+  - tig
+  - lazygit

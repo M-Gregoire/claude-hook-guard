@@ -1,0 +1,17 @@
+# Edit tools family
+name: edit
+description: Tools for editing files
+
+# Claude Code tools
+claude_tools:
+  - Edit
+
+# Shell commands
+shell_commands:
+  - sed
+  - awk
+  - vim
+  - nvim
+  - emacs
+  - nano
+  - vi

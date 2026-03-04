@@ -1,0 +1,20 @@
+# File operation tools family
+name: file
+description: Tools for file operations (read/write)
+
+# Claude Code tools
+claude_tools:
+  - Read
+  - Write
+
+# Shell commands
+shell_commands:
+  - cat
+  - touch
+  - cp
+  - mv
+  - rm
+  - mkdir
+  - rmdir
+  - ln
+  - readlink

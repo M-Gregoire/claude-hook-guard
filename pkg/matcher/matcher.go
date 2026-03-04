@@ -138,15 +138,7 @@ func (m *Matcher) extractPath(input *hook.Input) string {
 	if path, ok := input.ToolInput["path"].(string); ok {
 		return path
 	}
-	// For Bash commands, extract path from command if possible
-	if input.ToolName == "Bash" {
-		if cmd, ok := input.ToolInput["command"].(string); ok {
-			// Try to extract paths from command (simple heuristic)
-			// This is a basic implementation - could be enhanced
-			return cmd
-		}
-	}
-	// Fall back to CWD
+	// Fall back to CWD for all other cases (including Bash commands)
 	return input.CWD
 }
 
