@@ -8,6 +8,68 @@
 
 A flexible, rule-based permission system for Claude Code hooks. Make intelligent decisions about allowing or denying tool operations based on tool names, parameters, working directory, and more.
 
+## ⚠️ Security Model
+
+**claude-hook-guard is a workflow guardrail, not a security boundary.**
+
+This tool is designed to:
+- ✅ Prevent **accidental** unwanted operations
+- ✅ Automate approval of **trusted** workflows
+- ✅ Provide **audit logs** of Claude's actions
+- ✅ Enforce **organizational policies** for routine tasks
+
+This tool is **NOT** designed to:
+- ❌ Prevent **deliberate bypass attempts**
+- ❌ Provide **security isolation** or sandboxing
+- ❌ Protect against **adversarial behavior**
+
+### Why It's Easy to Bypass
+
+The hook operates at the tool invocation level, not the system call level. Example bypass:
+
+```bash
+# Even if reading /etc/sensitive is blocked:
+# 1. Write a program that reads the file
+cat > bypass.go << 'EOF'
+package main
+import ("fmt"; "os")
+func main() {
+    data, _ := os.ReadFile("/etc/sensitive")
+    fmt.Println(string(data))
+}
+EOF
+
+# 2. Compile it (allowed - just running go build)
+go build -o bypass
+
+# 3. Execute it (allowed - just running ./bypass)
+./bypass  # Reads /etc/sensitive, bypassing your rule!
+```
+
+The hook cannot see what compiled binaries or scripts do internally.
+
+### When to Use This Tool
+
+**Good use cases:**
+- Prevent accidental `rm -rf` in the wrong directory
+- Auto-approve safe read operations in your development directories
+- Require confirmation before git pushes to main/master
+- Auto-approve document creation skills
+- Log all MCP operations for compliance
+
+**Bad use cases:**
+- Preventing a malicious actor from accessing sensitive files
+- Enforcing security policies against untrusted code
+- Sandboxing Claude from system resources
+
+### For Real Security Isolation
+
+If you need actual security boundaries, use OS-level sandboxing:
+- **Containers:** Docker, Podman
+- **VMs:** Virtual machines with network isolation
+- **OS Sandboxing:** macOS sandbox profiles, Linux seccomp/AppArmor
+- **Dedicated environments:** Separate development environments for sensitive work
+
 ## Features
 
 - **Semantic matching**: Match by `action_type` (read/write) and `tool_family` (search/edit/file/git)
