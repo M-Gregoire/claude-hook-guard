@@ -2,6 +2,8 @@ package classifier
 
 import (
 	"strings"
+
+	"github.com/M-Gregoire/claude-hook-guard/pkg/internal"
 )
 
 // ActionType represents the type of action a tool performs
@@ -57,15 +59,19 @@ func (c *Classifier) ClassifyBashCommand(command string) (ActionType, ToolFamily
 	}
 
 	baseCmd := parts[0]
+	internal.Debug("classifying bash command", "base_cmd", baseCmd, "full_command", command)
 
 	// Check if we have classification for this command
 	if info, ok := c.toolMap[baseCmd]; ok {
+		internal.Debug("found classification", "cmd", baseCmd, "family", info.Family, "action", info.ActionType)
 		// For git, refine action type based on subcommand
 		if baseCmd == "git" && len(parts) > 1 {
 			return classifyGitCommand(parts[1]), info.Family
 		}
 		return info.ActionType, info.Family
 	}
+
+	internal.Debug("no classification found", "cmd", baseCmd, "toolmap_size", len(c.toolMap))
 
 	// Check for redirection operators (indicates write)
 	if containsAny(command, []string{">", ">>", "tee "}) {

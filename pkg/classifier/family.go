@@ -39,8 +39,11 @@ func LoadFamilies(familiesDir string) (map[string]ToolFamily, map[string]ToolInf
 		familiesDir = filepath.Join(home, ".config", "claude-hook-guard", "families")
 	}
 
+	internal.Debug("loading families", "dir", familiesDir)
+
 	// Create default families if directory doesn't exist
 	if _, err := os.Stat(familiesDir); os.IsNotExist(err) {
+		internal.Info("families directory does not exist, creating defaults", "dir", familiesDir)
 		if err := createDefaultFamilies(familiesDir); err != nil {
 			return nil, nil, err
 		}
@@ -69,6 +72,8 @@ func LoadFamilies(familiesDir string) (map[string]ToolFamily, map[string]ToolInf
 			continue // Skip invalid files
 		}
 
+		internal.Debug("loaded family", "name", family.Name, "claude_tools", len(family.ClaudeTools), "shell_commands", len(family.ShellCommands))
+
 		familyType := ToolFamily(family.Name)
 		familyNames[family.Name] = familyType
 
@@ -79,6 +84,7 @@ func LoadFamilies(familiesDir string) (map[string]ToolFamily, map[string]ToolInf
 				ActionType: actionType,
 				Family:     familyType,
 			}
+			internal.Debug("registered claude tool", "tool", tool, "family", family.Name, "action", actionType)
 		}
 
 		// Add shell commands (will be matched when running via Bash)
@@ -88,6 +94,7 @@ func LoadFamilies(familiesDir string) (map[string]ToolFamily, map[string]ToolInf
 				ActionType: actionType,
 				Family:     familyType,
 			}
+			internal.Debug("registered shell command", "cmd", cmd, "family", family.Name, "action", actionType)
 		}
 	}
 
