@@ -23,6 +23,11 @@ func New(cfg *config.Config) *Matcher {
 
 // Evaluate evaluates all rules against the input and returns the decision, reason, and matched rule name
 func (m *Matcher) Evaluate(input *hook.Input) (hook.Decision, string, string, error) {
+	// Special handling for Task tool - pass through since actual operations inside will be checked
+	if input.ToolName == "Task" {
+		return hook.DecisionIgnore, "Task is a wrapper - operations inside are checked individually", "", nil
+	}
+
 	// Sort rules by priority (higher first)
 	rules := make([]config.Rule, len(m.config.Rules))
 	copy(rules, m.config.Rules)
