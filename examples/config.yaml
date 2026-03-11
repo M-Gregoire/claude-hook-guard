@@ -10,6 +10,15 @@ logging:
   enabled: true
   file: $HOME/.claude/claude-hook-guard.log
 
+# expand_command_substitutions: When enabled, Bash commands containing $()
+# substitutions are expanded and each sub-command is evaluated independently
+# against the same rules. The whole command is auto-allowed only if the main
+# command AND all sub-commands individually match an "allow" rule.
+# If any part is denied, the whole command is denied.
+# If any part has no matching rule or matches "ask", the user is prompted.
+# Default: false
+# expand_command_substitutions: true
+
 rules:
   # Allow all operations in ~/org/projects
   - name: allow-org-projects

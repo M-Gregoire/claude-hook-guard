@@ -8,6 +8,7 @@ import (
 
 	"github.com/M-Gregoire/claude-hook-guard/pkg/classifier"
 	"github.com/M-Gregoire/claude-hook-guard/pkg/config"
+	"github.com/M-Gregoire/claude-hook-guard/pkg/expander"
 	"github.com/M-Gregoire/claude-hook-guard/pkg/hook"
 )
 
@@ -28,6 +29,18 @@ func (m *Matcher) Evaluate(input *hook.Input) (hook.Decision, string, string, er
 		return hook.DecisionIgnore, "Task is a wrapper - operations inside are checked individually", "", nil
 	}
 
+	// Expand $() command substitutions if enabled
+	if m.config.ExpandCommandSubstitutions && input.ToolName == "Bash" {
+		if cmd, ok := input.ToolInput["command"].(string); ok && strings.Contains(cmd, "$(") {
+			return m.evaluateWithExpansion(input)
+		}
+	}
+
+	return m.evaluateRules(input)
+}
+
+// evaluateRules runs all rules against the input in priority order
+func (m *Matcher) evaluateRules(input *hook.Input) (hook.Decision, string, string, error) {
 	// Sort rules by priority (higher first)
 	rules := make([]config.Rule, len(m.config.Rules))
 	copy(rules, m.config.Rules)
@@ -54,6 +67,60 @@ func (m *Matcher) Evaluate(input *hook.Input) (hook.Decision, string, string, er
 
 	// No rules matched - pass through to Claude Code
 	return hook.DecisionIgnore, "No matching rules", "", nil
+}
+
+// evaluateWithExpansion evaluates a Bash command that contains $() substitutions.
+// Each sub-command is evaluated independently; the whole command is allowed only if
+// all parts (main command + all sub-commands) individually evaluate to allow.
+func (m *Matcher) evaluateWithExpansion(input *hook.Input) (hook.Decision, string, string, error) {
+	cmd := input.ToolInput["command"].(string)
+	mainCmd, subCmds := expander.ExtractSubCommands(cmd)
+
+	// Evaluate the main command (substitutions stripped, leading assignments removed)
+	baseCmd := expander.StripLeadingAssignments(mainCmd)
+	mainDecision, mainReason, mainRule, err := m.evaluateRules(cloneWithCommand(input, baseCmd))
+	if err != nil {
+		return hook.DecisionAsk, "", "", err
+	}
+	if mainDecision == hook.DecisionIgnore {
+		mainDecision = hook.DecisionAsk
+	}
+	if mainDecision == hook.DecisionDeny {
+		return hook.DecisionDeny, "Main command denied: " + mainReason, mainRule, nil
+	}
+
+	// Evaluate each sub-command (recursive — handles nesting naturally)
+	for _, sub := range subCmds {
+		subDecision, subReason, subRule, err := m.Evaluate(cloneWithCommand(input, sub))
+		if err != nil {
+			return hook.DecisionAsk, "", "", err
+		}
+		if subDecision == hook.DecisionIgnore {
+			subDecision = hook.DecisionAsk
+		}
+		if subDecision == hook.DecisionDeny {
+			return hook.DecisionDeny, "Sub-command denied: " + subReason, subRule, nil
+		}
+		if subDecision == hook.DecisionAsk {
+			return hook.DecisionAsk, "Sub-command requires approval: " + subReason, subRule, nil
+		}
+	}
+
+	if mainDecision == hook.DecisionAllow {
+		return hook.DecisionAllow, "All commands allowed (with substitution expansion)", mainRule, nil
+	}
+	return hook.DecisionAsk, mainReason, mainRule, nil
+}
+
+// cloneWithCommand returns a shallow copy of input with the command field replaced
+func cloneWithCommand(input *hook.Input, cmd string) *hook.Input {
+	newInput := *input
+	newInput.ToolInput = make(map[string]interface{}, len(input.ToolInput))
+	for k, v := range input.ToolInput {
+		newInput.ToolInput[k] = v
+	}
+	newInput.ToolInput["command"] = cmd
+	return &newInput
 }
 
 // matchRule checks if a rule matches the input

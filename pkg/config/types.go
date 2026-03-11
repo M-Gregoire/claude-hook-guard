@@ -9,9 +9,10 @@ import (
 
 // Config represents the hook guard configuration
 type Config struct {
-	FamiliesDir string  `yaml:"families_dir,omitempty"`
-	Logging     Logging `yaml:"logging,omitempty"`
-	Rules       []Rule  `yaml:"rules"`
+	FamiliesDir                string  `yaml:"families_dir,omitempty"`
+	Logging                    Logging `yaml:"logging,omitempty"`
+	ExpandCommandSubstitutions bool    `yaml:"expand_command_substitutions,omitempty"`
+	Rules                      []Rule  `yaml:"rules"`
 }
 
 // Logging configures decision logging

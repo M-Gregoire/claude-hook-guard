@@ -48,6 +48,28 @@ go build -o bypass
 
 The hook cannot see what compiled binaries or scripts do internally.
 
+### Path Matching is Best-Effort
+
+**Determining which path a command operates on is fundamentally difficult and unreliable.**
+
+The hook extracts paths in this order:
+1. Explicit parameters (`file_path`, `path`) from tools like Read, Write, Edit
+2. Current working directory (CWD) as fallback for Bash commands
+
+For shell commands, the hook **does not** attempt to parse command arguments to extract paths because:
+
+- **Syntax ambiguity**: Is `-p /path` a flag with argument, or a boolean flag followed by a positional argument?
+- **Semantic ambiguity**: Which path matters? `rsync /src /dst` has both source and destination. `docker run -v /host:/container` has two paths.
+- **Multiple paths**: `cat file1 file2 file3` operates on multiple files
+- **No explicit path**: `npm install` operates in CWD but has no path argument
+
+**Recommendation:** Path-based rules work best for:
+- Tools with explicit path parameters (Read, Write, Edit, Grep, Glob)
+- CWD-based matching for shell commands (e.g., "allow all operations when CWD is ~/dev/")
+- Blocking entire command patterns regardless of path (e.g., "deny all `rm -rf`")
+
+**Do not rely on path matching as a security control.** It's a convenience feature for workflow automation, not a security boundary.
+
 ### When to Use This Tool
 
 **Good use cases:**
@@ -80,6 +102,7 @@ If you need actual security boundaries, use OS-level sandboxing:
 - **Path matching**: Match on file paths across different tools
 - **Three decision types**: `allow`, `deny`, or `ask` (prompt user)
 - **Decision logging**: JSON-formatted logs of all permission decisions
+- **Command substitution expansion**: Automatically evaluate `$()` sub-commands against rules
 
 ## Installation
 
@@ -338,6 +361,49 @@ String matchers support multiple matching strategies:
 ```
 
 **Note:** You can use `action_type`/`tool_family` for semantic matching OR `tool_name` for specific tools. For MCP tools, use `mcp_server` and `mcp_tool` matchers. For skills, match on `tool_name: "Skill"` and use `parameters.skill` to match the skill name. Semantic matching is recommended for maintainability.
+
+## Command Substitution Expansion
+
+When a Bash command contains `$()` substitutions, Claude Code shows an approval prompt by default (e.g., `AUTH="$(ddtool auth token ...)" http GET url`). With `expand_command_substitutions: true`, claude-hook-guard evaluates each sub-command independently against your rules. If the main command **and** all sub-commands each match an `allow` rule, the whole command is auto-approved — no prompt needed.
+
+Enable in your config:
+
+```yaml
+expand_command_substitutions: true
+```
+
+Then add rules for each command you trust:
+
+```yaml
+rules:
+  # Allow ddtool for auth token generation
+  - name: allow-ddtool
+    match:
+      parameters:
+        command: { regex: "^ddtool " }
+    action: allow
+
+  # Allow httpie for API testing
+  - name: allow-http
+    match:
+      parameters:
+        command: { regex: "^http " }
+    action: allow
+```
+
+With these rules, `AUTH="$(ddtool auth token foo --http-header)" http GET https://example.com "$AUTH"` is auto-approved because both `ddtool` and `http` are individually allowed.
+
+**Combining logic:**
+
+| Main command | Sub-commands | Result |
+|---|---|---|
+| `allow` | all `allow` | **allow** |
+| `allow` | any `ask` or no rule | **ask** |
+| `allow` | any `deny` | **deny** |
+| `deny` | any | **deny** |
+| `ask` / no rule | any | **ask** |
+
+Nested substitutions (e.g., `$(cmd $(inner))`) are handled recursively. Default: `false`.
 
 ## Logging
 
